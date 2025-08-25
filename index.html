@@ -474,13 +474,18 @@
         // Get the target table
         var table = tables[fileIndex];
         
-        // Extract text content from the table
+        // Extract text content from the table, excluding line number cells
         var content = '';
         var rows = table.getElementsByTagName('tr');
         for (var i = 0; i < rows.length; i++) {
           var cells = rows[i].getElementsByTagName('td');
           for (var j = 0; j < cells.length; j++) {
-            var pre = cells[j].getElementsByTagName('pre')[0];
+            var cell = cells[j];
+            // Skip line number cells (they have the linenum_cell class)
+            if (cell.classList.contains('linenum_cell')) {
+              continue;
+            }
+            var pre = cell.getElementsByTagName('pre')[0];
             if (pre) {
               content += pre.textContent + '\n';
             }
