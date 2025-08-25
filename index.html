@@ -126,6 +126,33 @@
             opacity: 1;
         }
 
+        .hunk-copy-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 2px 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.3s ease;
+            z-index: 11;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+        }
+
+        .hunk-copy-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            opacity: 1;
+        }
+
         .diff-table-container {
             position: relative;
         }
@@ -484,13 +511,13 @@
                         <div class="stats">${statsText}</div>
                         <div class="diff-table-container">
                             <button class="copy-btn" data-file-index="${index}" title="Copy modified code"><i class="fas fa-copy"></i></button>
-                            ${this.renderTable(file)}
+                            ${this.renderTable(file, index)}
                         </div>
                     </div>
                 `;
             }
 
-            renderTable(file) {
+            renderTable(file, fileIndex) {
                 let leftLine = 0;
                 let rightLine = 0;
                 let rows = '';
@@ -504,11 +531,13 @@
                         
                         // Add hunk header row
                         const context = hunkMatch[3].trim();
+                        const hunkIndex = file.hunks.indexOf(hunk);
                         rows += `
                             <tr class="diff-row">
                                 <td class="line-number">...</td>
                                 <td class="line-number">...</td>
-                                <td class="diff-content diff-header" colspan="2">
+                                <td class="diff-content diff-header" colspan="2" style="position: relative;">
+                                    <button class="hunk-copy-btn" data-file-index="${fileIndex}" data-hunk-index="${hunkIndex}" title="Copy hunk"><i class="fas fa-copy"></i></button>
                                     ${this.escapeHtml(hunk.header)}
                                     ${context ? `<br><em>${this.escapeHtml(context)}</em>` : ''}
                                 </td>
@@ -575,10 +604,20 @@
             }
 
             addCopyListeners() {
+                // File-level copy buttons
                 document.querySelectorAll('.copy-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const fileIndex = parseInt(e.target.dataset.fileIndex);
                         this.copyFileContent(fileIndex);
+                    });
+                });
+
+                // Hunk-level copy buttons
+                document.querySelectorAll('.hunk-copy-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const fileIndex = parseInt(e.target.dataset.fileIndex);
+                        const hunkIndex = parseInt(e.target.dataset.hunkIndex);
+                        this.copyHunkContent(fileIndex, hunkIndex);
                     });
                 });
             }
@@ -628,6 +667,77 @@
                         originalIcon.className = 'fas fa-copy';
                         btn.style.background = '';
                     }, 2000);
+                    
+                } catch (err) {
+                    console.error('Copy failed:', err);
+                    alert('Copy failed. Please try selecting and copying manually.');
+                }
+            }
+
+            async copyHunkContent(fileIndex, hunkIndex) {
+                const fileSection = document.getElementById(`file-${fileIndex}`);
+                if (!fileSection) return;
+
+                const table = fileSection.querySelector('.diff-table');
+                const rows = table.querySelectorAll('tbody tr');
+                
+                let rightLines = [];
+                let inTargetHunk = false;
+                let hunkCount = -1;
+                
+                rows.forEach(row => {
+                    // Check if this is a hunk header
+                    const headerCell = row.querySelector('.diff-header');
+                    if (headerCell) {
+                        const copyBtn = headerCell.querySelector('.hunk-copy-btn');
+                        if (copyBtn) {
+                            hunkCount++;
+                            if (hunkCount === hunkIndex) {
+                                inTargetHunk = true;
+                            } else {
+                                inTargetHunk = false;
+                            }
+                        }
+                        return; // Skip header rows for content
+                    }
+                    
+                    // Only process lines if we're in the target hunk
+                    if (!inTargetHunk) return;
+                    
+                    const rightContent = row.querySelector('.diff-content:not(.left)');
+                    
+                    if (rightContent && !rightContent.classList.contains('diff-empty')) {
+                        const rightText = rightContent.textContent;
+                        
+                        // Add lines that exist in the right side (modified/new code)
+                        if (rightContent.classList.contains('diff-added') ||
+                            rightContent.classList.contains('diff-context')) {
+                            rightLines.push(rightText);
+                        }
+                    }
+                });
+
+                // Just join the right-side lines directly - no extra formatting
+                let content = rightLines.join('\n').trim();
+                
+                // Clean up excessive empty lines but preserve meaningful ones
+                content = content.replace(/\n\s*\n\s*\n+/g, '\n\n');
+
+                try {
+                    await navigator.clipboard.writeText(content);
+                    
+                    // Visual feedback with checkmark icon
+                    const btn = fileSection.querySelector(`.hunk-copy-btn[data-hunk-index="${hunkIndex}"]`);
+                    if (btn) {
+                        const originalIcon = btn.querySelector('i');
+                        originalIcon.className = 'fas fa-check';
+                        btn.style.background = '#27ae60';
+                        
+                        setTimeout(() => {
+                            originalIcon.className = 'fas fa-copy';
+                            btn.style.background = '';
+                        }, 2000);
+                    }
                     
                 } catch (err) {
                     console.error('Copy failed:', err);
