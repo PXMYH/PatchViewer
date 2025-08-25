@@ -550,13 +550,34 @@
                 const table = fileSection.querySelector('.diff-table');
                 const rows = table.querySelectorAll('tbody tr');
                 
-                let content = '';
+                let lines = [];
                 rows.forEach(row => {
-                    const cells = row.querySelectorAll('.diff-content');
-                    cells.forEach(cell => {
-                        content += cell.textContent + '\n';
-                    });
+                    // Skip header rows (hunk headers)
+                    if (row.querySelector('.diff-header')) return;
+                    
+                    const contentCell = row.querySelector('.diff-content:not(.diff-header)');
+                    if (contentCell) {
+                        const line = contentCell.textContent;
+                        // Only add non-empty lines or preserve intentionally empty lines in the diff
+                        if (line.length > 0 || contentCell.classList.contains('diff-context') || 
+                            contentCell.classList.contains('diff-added') || 
+                            contentCell.classList.contains('diff-removed')) {
+                            lines.push(line);
+                        }
+                    }
                 });
+
+                // Join lines and remove excessive empty lines (more than 2 consecutive)
+                let content = lines.join('\n');
+                
+                // Remove leading/trailing whitespace
+                content = content.trim();
+                
+                // Replace multiple consecutive empty lines with max 2 empty lines
+                content = content.replace(/\n\s*\n\s*\n+/g, '\n\n\n');
+                
+                // Remove any trailing empty lines after the cleanup
+                content = content.replace(/\n+$/, '');
 
                 try {
                     await navigator.clipboard.writeText(content);
