@@ -589,57 +589,38 @@
                 const table = fileSection.querySelector('.diff-table');
                 const rows = table.querySelectorAll('tbody tr');
                 
-                let leftLines = [];
                 let rightLines = [];
                 
                 rows.forEach(row => {
-                    // Skip header rows (hunk headers)
-                    if (row.querySelector('.diff-header')) {
-                        const headerText = row.querySelector('.diff-header').textContent.trim();
-                        leftLines.push(`// ${headerText}`);
-                        rightLines.push(`// ${headerText}`);
-                        return;
-                    }
+                    // Skip header rows (hunk headers) - they're metadata, not code
+                    if (row.querySelector('.diff-header')) return;
                     
-                    const leftContent = row.querySelector('.diff-content.left');
                     const rightContent = row.querySelector('.diff-content:not(.left)');
                     
-                    if (leftContent && rightContent) {
-                        const leftText = leftContent.textContent;
+                    if (rightContent && !rightContent.classList.contains('diff-empty')) {
                         const rightText = rightContent.textContent;
                         
-                        // Only add non-empty content or preserve meaningful empty lines
-                        if (leftContent.classList.contains('diff-removed') || 
-                            leftContent.classList.contains('diff-context') || 
-                            leftText.trim().length > 0) {
-                            leftLines.push(leftText);
-                        }
-                        
+                        // Add lines that exist in the right side (modified/new code)
                         if (rightContent.classList.contains('diff-added') || 
-                            rightContent.classList.contains('diff-context') || 
-                            rightText.trim().length > 0) {
+                            rightContent.classList.contains('diff-context')) {
                             rightLines.push(rightText);
                         }
                     }
                 });
 
-                // Create side-by-side content
-                const maxLines = Math.max(leftLines.length, rightLines.length);
-                let content = '=== ORIGINAL (LEFT) ===\n';
-                content += leftLines.join('\n').trim();
-                content += '\n\n=== MODIFIED (RIGHT) ===\n';
-                content += rightLines.join('\n').trim();
+                // Just join the right-side lines directly - no extra formatting
+                let content = rightLines.join('\n').trim();
                 
-                // Clean up excessive empty lines
+                // Clean up excessive empty lines but preserve meaningful ones
                 content = content.replace(/\n\s*\n\s*\n+/g, '\n\n');
 
                 try {
                     await navigator.clipboard.writeText(content);
                     
-                    // Visual feedback
+                    // Visual feedback with checkmark icon
                     const btn = fileSection.querySelector('.copy-btn');
                     const originalText = btn.textContent;
-                    btn.textContent = '✅ Copied!';
+                    btn.textContent = '✅';
                     btn.style.background = '#27ae60';
                     
                     setTimeout(() => {
