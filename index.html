@@ -205,7 +205,13 @@
             
             // Store the file index as a data attribute
             var fileIndex = d.getElementsByClassName("result_table").length;
-            copyBtn.setAttribute("onclick", "copyPatchContent(" + fileIndex + ")");
+            
+            // Use a closure to capture the correct file index
+            (function(currentFileIndex) {
+              copyBtn.onclick = function() {
+                copyPatchContent(currentFileIndex);
+              };
+            })(fileIndex);
             
             // Position the copy button in the nav_filename_bar (top right of filename area)
             c.style.position = "relative";
