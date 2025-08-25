@@ -164,6 +164,32 @@
       .nav_filelist_bar {
         padding-top: .5em
       }
+      
+      .copy_button {
+        cursor: pointer;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        vertical-align: middle;
+        display: inline-block;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 100;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      
+      .copy_button:hover {
+        background-color: #e0e0e0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      
+      .nav_filename_bar {
+        position: relative;
+      }
     </style>
     <script type="text/javascript" language="JavaScript">
       /*
@@ -174,10 +200,24 @@
             var b = document.createElement("span");
             b.setAttribute("class", "nav_filename");
             b.appendChild(document.createTextNode("" == a ? "Unknown" : a));
+            
             var c = document.createElement("div");
             c.setAttribute("class", "nav_filename_bar");
             c.appendChild(b);
-            d.appendChild(c)
+            d.appendChild(c);
+            
+            // Create copy button positioned in top right corner of right panel
+            var copyBtn = document.createElement("span");
+            copyBtn.setAttribute("class", "copy_button");
+            copyBtn.appendChild(document.createTextNode("Copy"));
+            
+            // Store the file index as a data attribute
+            var fileIndex = d.getElementsByClassName("result_table").length;
+            copyBtn.setAttribute("onclick", "copyPatchContent(" + fileIndex + ")");
+            
+            // Position the copy button in the nav_filename_bar (top right of filename area)
+            c.style.position = "relative";
+            c.appendChild(copyBtn);
           }
 
           function n(d, a) {
@@ -426,7 +466,39 @@
             }
           }
         } else alert("This feature is not supported in this browser. \nRun in Chrome/Firefox/Opera is highly recommended.")
-      }; /*]]>*/
+      };
+      
+      function copyPatchContent(fileIndex) {
+        // Get all tables in the result area
+        var tables = document.getElementById('diffResult').getElementsByClassName('result_table');
+        if (fileIndex >= tables.length) return;
+        
+        // Get the target table
+        var table = tables[fileIndex];
+        
+        // Extract text content from the table
+        var content = '';
+        var rows = table.getElementsByTagName('tr');
+        for (var i = 0; i < rows.length; i++) {
+          var cells = rows[i].getElementsByTagName('td');
+          for (var j = 0; j < cells.length; j++) {
+            var pre = cells[j].getElementsByTagName('pre')[0];
+            if (pre) {
+              content += pre.textContent + '\n';
+            }
+          }
+        }
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(content)
+          .then(function() {
+            alert('Patch content copied to clipboard!');
+          })
+          .catch(function(err) {
+            console.error('Could not copy text: ', err);
+            alert('Failed to copy. Your browser may not support this feature.');
+          });
+      } /*]]>*/
     </script>
   </head>
   <body onload="form_diff.reset()">
