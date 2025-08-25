@@ -98,20 +98,35 @@
         }
 
         .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
             background: #3498db;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 8px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 500;
             transition: all 0.3s ease;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
         }
 
         .copy-btn:hover {
             background: #2980b9;
             transform: translateY(-1px);
+            opacity: 1;
+        }
+
+        .diff-table-container {
+            position: relative;
         }
 
         .diff-table {
@@ -464,10 +479,12 @@
                     <div id="file-${index}" class="file-section">
                         <div class="file-header">
                             <span class="file-name">${file.name}</span>
-                            <button class="copy-btn" data-file-index="${index}">📋 Copy</button>
                         </div>
                         <div class="stats">${statsText}</div>
-                        ${this.renderTable(file)}
+                        <div class="diff-table-container">
+                            <button class="copy-btn" data-file-index="${index}" title="Copy modified code">📋</button>
+                            ${this.renderTable(file)}
+                        </div>
                     </div>
                 `;
             }
