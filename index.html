@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Patch Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -482,7 +483,7 @@
                         </div>
                         <div class="stats">${statsText}</div>
                         <div class="diff-table-container">
-                            <button class="copy-btn" data-file-index="${index}" title="Copy modified code">📋</button>
+                            <button class="copy-btn" data-file-index="${index}" title="Copy modified code"><i class="fas fa-copy"></i></button>
                             ${this.renderTable(file)}
                         </div>
                     </div>
@@ -619,12 +620,12 @@
                     
                     // Visual feedback with checkmark icon
                     const btn = fileSection.querySelector('.copy-btn');
-                    const originalText = btn.textContent;
-                    btn.textContent = '✅';
+                    const originalIcon = btn.querySelector('i');
+                    originalIcon.className = 'fas fa-check';
                     btn.style.background = '#27ae60';
                     
                     setTimeout(() => {
-                        btn.textContent = originalText;
+                        originalIcon.className = 'fas fa-copy';
                         btn.style.background = '';
                     }, 2000);
                     
